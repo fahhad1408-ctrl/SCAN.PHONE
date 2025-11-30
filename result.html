@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>نتيجة الفحص</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+ body{font-family:Arial;padding:28px;background:#f6f8fb;color:#111}
+ .card{max-width:800px;margin:24px auto;background:#fff;border-radius:10px;padding:18px;box-shadow:0 10px 30px rgba(13,38,76,.06)}
+ h2{margin:6px 0 12px}
+ .good{color:green;font-weight:700}
+ .warn{color:orange;font-weight:700}
+ .bad{color:red;font-weight:700}
+</style>
+</head>
+<body>
+ <div class="card">
+ <h2>نتيجة الفحص</h2>
+ <div id="banner" style="font-size:20px;font-weight:800;margin-bottom:12px">جاري جمع دلائل الفحص...</div>
+ <div id="details"></div> <div style="margin-top:14px;color:#666;font-size:13px">ملحوظة: الفحوص من المتصفح تعطي دلائل — للكشف النهائي يلزم تطبيق Native.</div> </div>
+
+<script>// سننفّذ فحص بسيط: ipapi + geolocation + بعض دلائل المحاكاةasync function runCheck() {
+ const result = { flags:0, details:[] };
+
+ // 1) IP + ip-geo
+ try {
+ const r = await fetch('https://ipapi.co/json/');
+ const j = await r.json();
+ result.ip = j.ip || null;
+ result.ipCity = j.city || null;
+ if (j.security && (j.security.vpn === true || j.security.proxy === true)) {
+ result.flags++;
+ result.details.push('VPN/Proxy مكتشف');
+ }
+ } catch(e) {
+ result.details.push('فشل في الحصول على IP');
+ }
+
+ // 2) geolocation
+ if ('geolocation' in navigator) {
+ try {
+ const pos = await new Promise((res, rej) => {
+ navigator.geolocation.getCurrentPosition(res, rej, {enableHighAccuracy:true, timeout:8000});
+ });
+ result.gps = {lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy};
+ if (pos.coords.accuracy > 80 || pos.coords.accuracy === 0) {
+ result.flags++; result.details.push('دقة GPS غير جيدة → احتمال تغيير موقع'); }
+ } catch (e) {
+ result.flags++; result.details.push('رفض صلاحية الموقع أو فشل → مشبوه'); }
+ } else {
+ result.details.push('Geolocation غير مدعوم');
+ }
+
+ // 3) دلائل محاكاة/Emulator/WebDriver try {
+ const ua = (navigator.userAgent || '').toLowerCase();
+ if (ua.includes('emulator') || ua.includes('sdk') || ua.includes('genymotion') || ua.includes('vbox') || ua.includes('nox')) {
+ result.flags++; result.details.push('دلائل محاكاة في User-Agent');
+ }
+ if (navigator.webdriver) { result.flags++; result.details.push('مشتبه: navigator.webdriver'); }
+ const touch = navigator.maxTouchPoints || 0;
+ if ((/mobile|android|iphone|ipad/i.test(navigator.userAgent)) && touch === 0) {
+ result.flags++; result.details.push('موبايل بدون Touch Points → مريب (قد يكون محاكي)');
+ }
+ } catch(e) { /* ignore */ }
+
+ // الحكم النهائي let verdict = 'جوالك سليم'; if (result.flags === 1) verdict = 'جوالك مشبوه'; if (result.flags >= 2) verdict = 'جوالك عالي الخطورة (قابل للانتحال)';
+ // عرض النتائج document.getElementById('banner').innerText = verdict;
+ const det = document.getElementById('details');
+ det.innerHTML = `<strong>أعلام:</strong> ${result.flags}<br><strong>تفاصيل:</strong><br><ul>${result.details.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+
+ // (اختياري) لو بغيت تسجّل النتيجة في Google Sheet أو سيرفر — تبني API POST هنا.}
+
+runCheck();
+</script>
+</body>
+</html>
