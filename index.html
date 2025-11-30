@@ -19,9 +19,7 @@
  <button id="checkBtn">تفعيل</button>
  <div id="msg" class="msg"></div> <p style="font-size:12px;color:#666;margin-top:10px">إذا نجح التفعيل، ستنتقل تلقائياً لصفحة الفحص.</p> </div>
 
-<script>
-const API ="https://script.google.com/macros/s/AKfycbzSvQhs7N6EOpXy09VQjib0gdmXwR2ZkauAgTWCqKcaXJgHxWbhTgi0ZlNdgFXsliaF/exec"; 
- // ← ضع هنا رابط الـ Web App من Apps Script
+<script>// رابط ملف CSV على GitHub (Raw URL)const CSV_URL = "https://raw.githubusercontent.com/USERNAME/REPO/main/codes.csv";
 
 document.getElementById('checkBtn').addEventListener('click', async () => {
  const code = document.getElementById('codeInput').value.trim();
@@ -32,35 +30,31 @@ document.getElementById('checkBtn').addEventListener('click', async () => {
 
  try {
  msg.innerText = ' جاري التحقق...';
- const res = await fetch(API, {
- method: 'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({code})
- });
- const j = await res.json();
 
- if (j.status === 'ok') { msg.innerText = ' تم التفعيل — تحويل لصفحة الفحص...'; sessionStorage.setItem('activeCode', code);
- setTimeout(()=> location.href = 'scan.html', 800);
- } else if (j.status === 'used') {
- msg.innerText = ' الكود مستعمل مسبقاً';
- msg.style.color = 'orange';
- } else if (j.status === 'invalid') {
+ // جلب ملف CSV من GitHub
+ const res = await fetch(CSV_URL);
+ if (!res.ok) throw new Error('فشل تحميل الملف');
+ const text = await res.text();
+
+ // تحويل CSV لمصفوفة [ [code, status], ... ] const lines = text.split("\n").map(line => line.trim().split(","));
+
+ // البحث عن الكود const match = lines.find(row => row[0].toLowerCase() === code.toLowerCase());
+
+ if (!match) {
  msg.innerText = ' الكود غير صحيح';
  msg.style.color = 'red';
- } else {
- msg.innerText = 'خطأ: ' + (j.msg || 'غير متوقع');
- msg.style.color = 'red';
+ } else if (match[1] && match[1].toLowerCase() === 'مستخدم') {
+ msg.innerText = ' الكود مستعمل مسبقاً';
+ msg.style.color = 'orange';
+ } else { msg.innerText = ' تم التفعيل — تحويل لصفحة الفحص...'; sessionStorage.setItem('activeCode', code);
+ setTimeout(()=> location.href = 'scan.html', 800);
  }
+
  } catch (err) {
- console.error(err); msg.innerText = 'خطأ في الاتصال بالـ API'; msg.style.color = 'red';
+ console.error(err); msg.innerText = 'خطأ في الاتصال بالملف'; msg.style.color = 'red';
  }
 });
 </script>
+
 </body>
-
 </html>
-
-
-
-
-
