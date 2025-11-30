@@ -19,7 +19,9 @@
  <button id="checkBtn">تفعيل</button>
  <div id="msg" class="msg"></div> <p style="font-size:12px;color:#666;margin-top:10px">إذا نجح التفعيل، ستنتقل تلقائياً لصفحة الفحص.</p> </div>
 
-<script>// رابط ملف CSV على GitHub (Raw URL)const CSV_URL = "https://raw.githubusercontent.com/fahhad1408-ctrl/SCAN.PHONE/refs/heads/main/codes.csv";
+<script>
+ // رابط ملف CSV على GitHub (Raw URL)
+ const CSV_URL = "https://raw.githubusercontent.com/fahhad1408-ctrl/SCAN.PHONE/refs/heads/main/codes.csv";
 
 document.getElementById('checkBtn').addEventListener('click', async () => {
  const code = document.getElementById('codeInput').value.trim();
@@ -58,4 +60,5 @@ document.getElementById('checkBtn').addEventListener('click', async () => {
 
 </body>
 </html>
+
 
